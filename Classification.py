@@ -15,11 +15,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.decomposition import PCA
-from sklearn.compose import ColumnTransformer
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from sklearn.exceptions import DataConversionWarning, UndefinedMetricWarning, ConvergenceWarning
-import pdpipe as pdp
 import pickle
 import warnings
 
@@ -84,7 +81,7 @@ class Classification:
         plt.tight_layout()
 
     @staticmethod
-    def _grid_search(model, param_grid, features_train, target_train, model_name):
+    def _grid_search(model, param_grid, features_train, features_test, target_train, target_test, model_name):
         """
         Perform grid search for hyperparameter tuning.
 
@@ -126,34 +123,34 @@ class Classification:
         model = DecisionTreeClassifier(random_state=0, class_weight='balanced')
         if search_space is None:
             search_space = {'tree__max_depth': range(1, 10, 10)}
-        return self._grid_search(model, search_space, features_train, target_train, 'tree')
+        return self._grid_search(model, search_space, features_train, features_test, target_train, target_test, 'tree')
 
     def knn(self, features_train, target_train, features_test, target_test, search_space=None):
         pipeline_kn = Pipeline([('std', StandardScaler()), ('kn', KNeighborsClassifier(weights='distance'))])
         if search_space is None:
             k = np.unique(np.geomspace(1, 30, 5, dtype='int'))
             search_space = {'kn__n_neighbors': k}
-        return self._grid_search(pipeline_kn, search_space, features_train, target_train, 'knn')
+        return self._grid_search(pipeline_kn, search_space, features_train, features_test, target_train, target_test, 'knn')
 
     def logistic_regression(self, features_train, target_train, features_test, target_test, search_space=None):
         model_lr = LogisticRegression(class_weight='balanced', random_state=0)
         if search_space is None:
             search_space = {'lr__C': [0.001, 0.01, 0.1, 1, 10, 100]}
-        return self._grid_search(model_lr, search_space, features_train, target_train, 'logistic_regression')
+        return self._grid_search(model_lr, search_space, features_train, features_test, target_train, target_test, 'logistic_regression')
 
     def random_forest(self, features_train, target_train, features_test, target_test, search_space=None):
         model_rf = RandomForestClassifier(class_weight='balanced', random_state=0)
         if search_space is None:
             search_space = {'rf__n_estimators': [50, 100, 150],
                             'rf__max_depth': [None, 10, 20, 30]}
-        return self._grid_search(model_rf, search_space, features_train, target_train, 'random_forest')
+        return self._grid_search(model_rf, search_space, features_train, features_test, target_train, target_test, 'random_forest')
 
     def support_vector_machine(self, features_train, target_train, features_test, target_test, search_space=None):
         model_svm = SVC(class_weight='balanced', random_state=0)
         if search_space is None:
             search_space = {'svm__C': [0.1, 1, 10],
                             'svm__kernel': ['linear', 'rbf']}
-        return self._grid_search(model_svm, search_space, features_train, target_train, 'support_vector_machine')
+        return self._grid_search(model_svm, search_space, features_train, features_test, target_train, target_test, 'support_vector_machine')
 
     def neural_network(self, features_train, target_train, features_test, target_test, param_grid=None):
         def create_model():
@@ -167,15 +164,31 @@ class Classification:
         if param_grid is None:
             param_grid = {'epochs': [10, 20, 30],
                           'batch_size': [32, 64, 128]}
-        return self._grid_search(model, param_grid, features_train, target_train, 'neural_network')
+        return self._grid_search(model, param_grid, features_train, features_test, target_train, target_test, 'neural_network')
 
 
 # Example usage:
-# classification_model = Classification(link='your_dataset_link.csv')
-# features_train, features_test, target_train, target_test = train_test_split(...your split logic...)
-# metrics_tree = classification_model.decision_tree(features_train, target_train, features_test, target_test)
-# metrics_knn = classification_model.knn(features_train, target_train, features_test, target_test)
-# metrics_lr = classification_model.logistic_regression(features_train, target_train, features_test, target_test)
-# metrics_rf = classification_model.random_forest(features_train, target_train, features_test, target_test)
-# metrics_svm = classification_model.support_vector_machine(features_train, target_train, features_test, target_test)
-# metrics_nn = classification_model.neural_network(features_train, target_train, features_test, target_test)
+# Assuming you have your dataset link and split logic
+#dataset_link = 'your_dataset_link.csv'
+# Use your preferred method to load and preprocess the dataset
+# ...
+
+# Instantiate the Classification class
+#classification_model = Classification(link=dataset_link)
+
+# Assuming you have features and target variables from your dataset
+# Replace 'your_split_logic' with your actual logic
+#features_train, features_test, target_train, target_test = train_test_split(
+#    classification_model.df.drop('target_column', axis=1),  # Adjust 'target_column' accordingly
+#    classification_model.df['target_column'],  # Adjust 'target_column' accordingly
+#    test_size=0.2,  # Adjust the test_size parameter as needed
+#    random_state=42  # Set the random_state for reproducibility
+#)
+
+# Example usage of classification methods
+#metrics_tree = classification_model.decision_tree(features_train, target_train, features_test, target_test)
+#metrics_knn = classification_model.knn(features_train, target_train, features_test, target_test)
+#metrics_lr = classification_model.logistic_regression(features_train, target_train, features_test, target_test)
+#metrics_rf = classification_model.random_forest(features_train, target_train, features_test, target_test)
+#metrics_svm = classification_model.support_vector_machine(features_train, target_train, features_test, target_test)
+#metrics_nn = classification_model.neural_network(features_train, target_train, features_test, target_test)
